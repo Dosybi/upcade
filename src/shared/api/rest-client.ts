@@ -17,7 +17,9 @@ class RestApiClient {
     endpoint: string,
     options?: RequestInit
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`
+    const url = endpoint.startsWith('/api')
+      ? endpoint
+      : `${this.baseUrl}${endpoint}`
 
     try {
       const response = await fetch(url, {
@@ -50,14 +52,14 @@ class RestApiClient {
     if (filters?.creator) body.creator = filters.creator
     if (filters?.isMigrated !== undefined) body.isMigrated = filters.isMigrated
 
-    return this.request<TokensResponse>('/tokens', {
+    return this.request<TokensResponse>('/api/tokens', {
       method: 'POST',
       body: JSON.stringify(body),
     })
   }
 
   async getTokenDetails(address: string): Promise<Token> {
-    const response = await this.request<TokensResponse>('/tokens', {
+    const response = await this.request<TokensResponse>('/api/tokens', {
       method: 'POST',
       body: JSON.stringify({ limit: 100 }),
     })
@@ -78,10 +80,13 @@ class RestApiClient {
     tokenAddress: string,
     limit: number = 20
   ): Promise<Transaction[]> {
-    const response = await this.request<MongooseDoc<Transaction>[]>('/txs', {
-      method: 'POST',
-      body: JSON.stringify({ token: tokenAddress, limit }),
-    })
+    const response = await this.request<MongooseDoc<Transaction>[]>(
+      '/api/txs',
+      {
+        method: 'POST',
+        body: JSON.stringify({ token: tokenAddress, limit }),
+      }
+    )
 
     return response.map((item: MongooseDoc<Transaction>) => {
       if (item._doc) {
